@@ -1,0 +1,138 @@
+{
+  "can_1": {
+    "transmit": [
+      {
+        "name": "CONNECT",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1000,
+        "id": "111",
+        "data": "FF00"
+      },
+      {
+        "name": "GET_STATUS",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1010,
+        "id": "111",
+        "data": "FD"
+      },
+      {
+        "name": "FREE_DAQ",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1020,
+        "id": "111",
+        "data": "D6"
+      },
+      {
+        "name": "AL_DAQ",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1030,
+        "id": "111",
+        "data": "D5000100"
+      },
+      {
+        "name": "AL_ODT_0x0000",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1040,
+        "id": "111",
+        "data": "D400000001"
+      },
+      {
+        "name": "AL_ODT_ENT_0x00",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1050,
+        "id": "111",
+        "data": "D30000000004"
+      },
+      {
+        "name": "SET_DAQ_PTR",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1060,
+        "id": "111",
+        "data": "E20000000000"
+      },
+      {
+        "name": "WRITE_DAQ_MULTI",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1070,
+        "id": "111",
+        "data": "C704FF04A201CDFA0000FF02A503CDFA0000FF02A706CAFA0000FF02B211CDFA0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "name": "SET_DAQ_LIST_MOD",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1080,
+        "id": "111",
+        "data": "E00000000200018B"
+      },
+      {
+        "name": "START_STOP_DAQ",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1090,
+        "id": "111",
+        "data": "DE020000"
+      },
+      {
+        "name": "START_STOP_SYNCH",
+        "state": 1,
+        "id_format": 0,
+        "frame_format": 1,
+        "brs": 1,
+        "log": 1,
+        "period": 0,
+        "delay": 1100,
+        "id": "111",
+        "data": "DD01"
+      }
+    ]
+  }
+}
