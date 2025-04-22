@@ -1,4 +1,4 @@
-# CANedge-XCP: A2L to 'transmit list' (Dynamic DAQ) + DBC [BETA]
+# CANedge-XCP: A2L to DAQ 'transmit list' + DBC [BETA]
 
 ## Overview
 
@@ -7,9 +7,9 @@ This project helps you use the CANedge for XCP on CAN data acquisition:
 - Load A2L file(s) 
 - Load user-defined text file (e.g. `CSV`) with ECU signal names and event channel numbers 
 - Generate DAQ frames required for dynamic DAQ initialization (incl. FD support and optimized packaging)
-- Generate CANedge transmit list JSON that can be loaded into a CANedge Configuration File via config editor/Python 
-- Generate DBC file that enables decoding of dynamic DAQ list (supporting LINEAR/RAT_FUNC decoding rules) 
-- Easily load the transmit list into an existing CANedge Configuration File
+- Generate CANedge transmit list for setting up dynamic DAQ
+- Generate DBC file that enables decoding of the initialized DAQ list
+- Load the JSON transmit list into an existing CANedge Configuration File
 - Easily combine transmit lists across multiple ECUs
 
 --------
@@ -40,22 +40,21 @@ pip install jsonschema
 python canedge_xcp.py path/to/ecu1.dbc path/to/ecu1.json path/to/ecu1.csv --a2l path/to/ecu1_part1.a2l path/to/ecu1_part2.a2l
 ```
 
-The script will output the generated CANedge transmit list and DBC file to the output paths specified. The partial JSON can be loaded into your existing Configuration File via the [CANedge Config Editor](https://canlogger.csselectronics.com/canedge-getting-started/ce3/configure-device/) using the 'partial config loader' editor tool. Alternatively, you can use e.g. the [canedge-manager](https://github.com/CSS-Electronics/canedge_manager) to update several devices at scale using the new partial config. 
-
-If you simply wish to update a Configuration File locally (e.g. from an SD), you can use below incl. optional Rule Schema validation:
+The script will output the generated CANedge transmit list and DBC file. You can easily load the transmit list into an existing Configuration File locally (e.g. from an SD) with optional Rule Schema validation:
 
 ```
 python update_existing_config.py path/to/ecu1.json path/to/config-01.09.json true --input_schema_file path/to/schema-01.09.json
 ```
 
-## Test with sample A2L and CSV
+Alternatively, you can load it via the [CANedge Config Editor](https://canlogger.csselectronics.com/canedge-getting-started/ce3/configure-device/) using the 'partial config loader' tool - or via the [canedge-manager](https://github.com/CSS-Electronics/canedge_manager) for OTA updates.
 
-You can do a quick test with the sample A2L and CSV as below:
+### Test with sample A2L and CSV
+
+You can test the functionality via our sample files:
 
 ```
 python canedge_xcp.py tests/output/ecu1.dbc tests/output/ecu1.json tests/measurement-files/sample.csv --a2l tests/a2l-files/ECU-sample-file.a2l
 python update_existing_config.py tests/output/ecu1.json tests/config-schema-files/config-01.09.json true --input_schema_file tests/config-schema-files/schema-01.09.json
-
 ```
 
 --------
@@ -76,9 +75,9 @@ python combine_multiple_ecus.py path/to/ecu1_and_ecu2.json --input_transmit_file
 ```
 
 Notes:
-- The script warns you if the transmit CAN ID is the same across the JSON files (separate ECUs must use separate IDs)
-- The script warns you if the joint transmit list exceeds the maximum number of frames or data bytes supported by the CANedge
-- You can use the optional `--offset_delta` to control the time spacing between separte ECU DAQ initialization sequences
+- The script warns you if the CAN ID is the same across the JSON files (separate ECUs must use separate IDs)
+- The script warns you if the joint transmit list exceeds the max number of frames or data bytes supported
+- Optionally use `--offset_delta` to control the time spacing between distinct ECU DAQ initialization sequences
 
 --------
 
@@ -87,7 +86,7 @@ Notes:
 You can decode the DAQ-DTO data using the output DBC file(s) in below tools:
 
 - [asammdf GUI](https://www.csselectronics.com/pages/asammdf-gui-api-mdf4-mf4) (v8.2.5d5+)
-- [MF4 decoders](https://www.csselectronics.com/pages/mdf4-decoders-dbc-mf4-parquet-csv)
+- [MF4 decoders](https://www.csselectronics.com/pages/mdf4-decoders-dbc-mf4-parquet-csv) (e.g. for deploying [Grafana dashboards](https://www.csselectronics.com/pages/telematics-dashboard-open-source))
 
 --------
 
@@ -95,3 +94,6 @@ You can decode the DAQ-DTO data using the output DBC file(s) in below tools:
 
 - The script assumes you are using CANedge FW `01.09.01+` (support for longer transmit lists)
 - It can be useful to add multiple commands in a `*.bat` file for repeated use
+- This script is provided as-is and we do not take responsibility for any issues arising from its use
+
+

@@ -1696,7 +1696,7 @@
               "title": "Restart timer",
               "description": "Number of runtime hours after which the device automatically restarts (set 0 to disable). Example: Set to 24 to restart after one day of runtime.",
               "type": "integer",
-              "default": 120,
+              "default": 24,
               "minimum": 0,
               "maximum": 168
             }
@@ -2112,18 +2112,9 @@
                 },
                 "tolerance": {
                   "$ref": "#/definitions/rtc_tolerance"
-                },
-                "ntp_server": {
-                  "title": "Time server",
-                  "description": "NTP server name used for time synchronization. If the first character is an asterisk (*) then the server name is treated as a server pool. Examples:  *.pool.ntp.org, *.us.pool.ntp.org, time.nist.gov",
-                  "type": "string",
-                  "default": "*.pool.ntp.org",
-                  "maxLength": 32,
-                  "pattern": "^\\*?[a-z0-9\\.-]*$"
                 }
               },
               "required": [
-                "ntp_server",
                 "tolerance"
               ]
             }
@@ -2136,8 +2127,7 @@
         "message": {},
         "valid_signal": {},
         "time_signal": {},
-        "tolerance": {},
-        "ntp_server": {}
+        "tolerance": {}
       },
       "required": [
         "sync",
@@ -2498,35 +2488,13 @@
     },
     "connect": {
       "title": "Connectivity",
-      "description": "Configuration of the WiFi based network.",
+      "description": "Configuration of the cellular based network.",
       "type": "object",
       "properties": {
-        "wifi": {
-          "title": "WiFi",
+        "cellular": {
+          "title": "Cellular",
           "type": "object",
           "properties": {
-            "mode": {
-              "title": "Mode",
-              "description": "In station mode, the device can use either active or passive scanning to find APs. Using active scan, the radio transmits a probe request and listens for responses. Using passive scan, the radio listens on each channel for beacons sent periodically by APs.",
-              "type": "integer",
-              "default": 0,
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "title": "Station mode (active scanning)",
-                  "enum": [
-                    0
-                  ]
-                },
-                {
-                  "type": "integer",
-                  "title": "Station mode (passive scanning)",
-                  "enum": [
-                    1
-                  ]
-                }
-              ]
-            },
             "keyformat": {
               "title": "Key format",
               "description": "The format of the password(s). Can be used to hide the sensitive credentials stored on the device.",
@@ -2549,44 +2517,39 @@
                 }
               ]
             },
-            "accesspoint": {
-              "title": "Access points",
-              "description": "List of access points. Connects to the first available AP in list.",
-              "type": "array",
-              "maxItems": 4,
-              "items": {
-                "type": "object",
-                "properties": {
-                  "ssid": {
-                    "title": "SSID",
-                    "description": "Access point SSID (name of access point)",
-                    "type": "string",
-                    "pattern": "^(?!\\s).+(?<!\\s)$",
-                    "minLength": 0,
-                    "maxLength": 32
-                  },
-                  "pwd": {
-                    "title": "Password",
-                    "type": "string",
-                    "pattern": "^(?!\\s).*(?<!\\s)$",
-                    "default": "",
-                    "maxLength": 64
-                  },
-                  "minrssi": {
-                    "title": "Minimum RSSI (received signal strength indicator), 0-100%",
-                    "description": "Sets a minimum required access point signal strength. The device will not connect to the access point if the measured signal strength is below the value of this field.",
-                    "type": "integer",
-                    "default": 0,
-                    "minimum": 0,
-                    "maximum": 100
-                  }
+            "pin": {
+              "title": "PIN",
+              "type": "string",
+              "default": ""
+            },
+            "apn": {
+              "title": "APN",
+              "description": "Access Point Name (APN).",
+              "type": "string",
+              "default": "",
+              "maxLength": 62
+            },
+            "roaming": {
+              "title": "Roaming",
+              "description": "Enable to allow roaming.",
+              "type": "integer",
+              "default": 0,
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "title": "Disabled",
+                  "enum": [
+                    0
+                  ]
                 },
-                "additionalProperties": false,
-                "required": [
-                  "ssid",
-                  "minrssi"
-                ]
-              }
+                {
+                  "type": "integer",
+                  "title": "Enabled",
+                  "enum": [
+                    1
+                  ]
+                }
+              ]
             }
           },
           "dependencies": {
@@ -2599,18 +2562,9 @@
                         0
                       ]
                     },
-                    "accesspoint": {
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "pwd": {
-                            "title": "Password",
-                            "description": "Access point password in plain form (max 64). Leave empty to connect to an open AP. Example: 31aAabC81@99.",
-                            "pattern": "^[ -~]*$",
-                            "minLength": 0
-                          }
-                        }
-                      }
+                    "pin": {
+                      "description": "PIN for the SIM card. Leave blank if none is set.",
+                      "pattern": "^(|[0-9]{4,8})$"
                     }
                   }
                 },
@@ -2621,18 +2575,11 @@
                         1
                       ]
                     },
-                    "accesspoint": {
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "pwd": {
-                            "title": "Encrypted password",
-                            "description": "Access point password in encrypted form (min 24, max 64). Example: rl8/EAy3qTChCsMIIeZPR6rvGEanRJCnL2xbzqo=. IMPORTANT: Ensure that you encrypt all access point passwords and that you include the server public key",
-                            "pattern": "^[a-zA-Z0-9+/=]*$",
-                            "minLength": 24
-                          }
-                        }
-                      }
+                    "pin": {
+                      "description": "PIN for the SIM card in encrypted form.",
+                      "pattern": "^[a-zA-Z0-9+/=]*$",
+                      "minLength": 28,
+                      "maxLength": 32
                     }
                   }
                 }
@@ -2641,8 +2588,10 @@
           },
           "additionalProperties": false,
           "required": [
-            "mode",
-            "keyformat"
+            "keyformat",
+            "pin",
+            "apn",
+            "roaming"
           ]
         },
         "protocol": {
@@ -2660,13 +2609,6 @@
               "title": "S3",
               "enum": [
                 0
-              ]
-            },
-            {
-              "type": "integer",
-              "title": "Web server",
-              "enum": [
-                1
               ]
             }
           ]
@@ -2904,129 +2846,6 @@
                   "additionalProperties": false
                 }
               }
-            },
-            {
-              "properties": {
-                "protocol": {
-                  "enum": [
-                    1
-                  ]
-                },
-                "webserver": {
-                  "title": "Web server settings",
-                  "type": "object",
-                  "properties": {
-                    "permission": {
-                      "title": "Access permission",
-                      "description": "Web server access permission level",
-                      "type": "integer",
-                      "default": 0,
-                      "additionalProperties": false,
-                      "oneOf": [
-                        {
-                          "type": "integer",
-                          "title": "Read only",
-                          "enum": [
-                            0
-                          ]
-                        },
-                        {
-                          "type": "integer",
-                          "title": "Read, write and execute",
-                          "enum": [
-                            1
-                          ]
-                        }
-                      ]
-                    },
-                    "security": {
-                      "title": "Security",
-                      "description": "Controls if the web server is protected by basic authentication or not.",
-                      "type": "integer",
-                      "default": 0,
-                      "additionalProperties": false,
-                      "oneOf": [
-                        {
-                          "type": "integer",
-                          "title": "None",
-                          "enum": [
-                            0
-                          ]
-                        },
-                        {
-                          "type": "integer",
-                          "title": "Basic",
-                          "enum": [
-                            1
-                          ]
-                        },
-                        {
-                          "type": "integer",
-                          "title": "Basic with encrypted password",
-                          "enum": [
-                            2
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  "dependencies": {
-                    "security": {
-                      "oneOf": [
-                        {
-                          "properties": {
-                            "security": {
-                              "enum": [
-                                0
-                              ]
-                            }
-                          }
-                        },
-                        {
-                          "properties": {
-                            "security": {
-                              "enum": [
-                                1
-                              ]
-                            },
-                            "password": {
-                              "title": "Password",
-                              "type": "string",
-                              "description": "Password",
-                              "minLength": 1,
-                              "maxLength": 64
-                            }
-                          }
-                        },
-                        {
-                          "properties": {
-                            "security": {
-                              "enum": [
-                                2
-                              ]
-                            },
-                            "password": {
-                              "title": "Encrypted password",
-                              "type": "string",
-                              "description": "Password in encrypted form (min 24, max 64)",
-                              "minLength": 24,
-                              "maxLength": 64
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "additionalProperties": false,
-                  "patternProperties": {
-                    "password": {}
-                  },
-                  "required": [
-                    "permission",
-                    "security"
-                  ]
-                }
-              }
             }
           ]
         }
@@ -3037,7 +2856,7 @@
         "webserver": {}
       },
       "required": [
-        "wifi"
+        "cellular"
       ]
     },
     "gnss": {
