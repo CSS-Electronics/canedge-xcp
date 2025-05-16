@@ -1,0 +1,26 @@
+{
+  "CAN_ID_MASTER": "0x111",
+  "CAN_ID_MASTER_EXTENDED": false,
+  "CAN_ID_SLAVE": "0x222",
+  "CAN_ID_SLAVE_EXTENDED": false,
+  "XCP_VERSION": "0x0102",
+  "BAUDRATE": 500000,
+  "WRITE_DAQ_MULTIPLE": true,
+  "BYTE_ORDER": "little",
+  "EVENTS": [
+      {
+          "EventName": "c_MT_Default_Task_x1",
+          "EventChannelNumber": 2,
+          "EventPriority": "0x8B"
+      },
+      {
+          "EventName": "c_MT_Default_Task_x2",
+          "EventChannelNumber": 3,
+          "EventPriority": "0x8A"
+      }
+  ],
+  "CAN_FD": true,
+  "CAN_FD_DATA_TRANSFER_BAUDRATE": 2000000,
+  "MAX_CTO": "0x0040",
+  "MAX_DTO": "0x0040"
+}

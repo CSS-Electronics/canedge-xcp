@@ -1,8 +1,9 @@
 class CANedgeXCP:
     # Initialize class
-    def __init__(self, a2l_files, signal_file):
+    def __init__(self, a2l_files, signal_file, default_params_file=None):
         self.a2l_files = a2l_files 
         self.signal_file = signal_file
+        self.default_params_file = default_params_file
         self.data_type_map = {
             "uchar": ("unsigned", 1),
             "schar": ("signed", 1),
@@ -98,71 +99,91 @@ class CANedgeXCP:
         
         a2l_params = {} 
         
-        for a2l_file_name, ast in a2l_dict.items():
-            
-            if_data = ast["PROJECT"]["MODULE"]["IF_DATA"]
-            
-            # Ensure IF_DATA is a list or dictionary and standardize to a list for easier handling
-            if isinstance(if_data, dict):
-                if_data = [if_data]
-            
-            # Get XCP_ON_CAN section (required) and extract relevant information
-            xcp = next((entry for entry in if_data if "XCP_ON_CAN" in entry), None)
-            xcp_on_can = xcp["XCP_ON_CAN"]
-            a2l_params["CAN_ID_MASTER"], a2l_params["CAN_ID_MASTER_EXTENDED"] = self.extract_can_id(self.get_next_value(xcp_on_can["DataParams"], "CAN_ID_MASTER"))
-            a2l_params["CAN_ID_SLAVE"], a2l_params["CAN_ID_SLAVE_EXTENDED"] = self.extract_can_id(self.get_next_value(xcp_on_can["DataParams"], "CAN_ID_SLAVE"))
-            a2l_params["XCP_VERSION"] = xcp_on_can["DataParams"][0]
-            a2l_params["BAUDRATE"] = self.force_int(self.get_next_value(xcp_on_can["DataParams"], "BAUDRATE")) 
-
-            # print(json.dumps(ast["PROJECT"],indent=4))
-            # sys.exit()
-            
-            # Attemt to extract PROTOCOL_LAYER and EVENT sections from XCP_ON_CAN sub section - otherwise default to general XCP section
-            try: 
-                protocol_layer = xcp_on_can["PROTOCOL_LAYER"]["DataParams"]
-                events = xcp_on_can["DAQ"]["EVENT"] 
-            except:
-                protocol_layer = xcp["PROTOCOL_LAYER"]["DataParams"]
-                events = xcp["DAQ"]["EVENT"] 
-                print("WARNING: Unable to extract PROTOCOL_LAYER and DAQ from XCP_ON_CAN - extracting instead from general XCP settings")
+        try:
+            # Attempt to extract parameters from A2L file
+            for a2l_file_name, ast in a2l_dict.items():
                 
-            # Add event data to list
-            event_data = []
-            for event in events:
-                event_data.append({"EventName": event["DataParams"][0].strip('"'), "EventChannelNumber": self.force_int(event["DataParams"][2]), "EventPriority": f"0x{self.force_int(event['DataParams'][7]):02X}"})
-            
-            if "WRITE_DAQ_MULTIPLE" in protocol_layer:
-                a2l_params["WRITE_DAQ_MULTIPLE"] = True 
-            else:  
-                a2l_params["WRITE_DAQ_MULTIPLE"] = False
-                  
-            a2l_params["BYTE_ORDER"] = 'big' if protocol_layer[10] == 'BYTE_ORDER_MSB_FIRST' else 'little'
-            a2l_params["EVENTS"] = event_data                
-            
-            # Assign CAN FD related information (if available)
-            try: 
-                can_fd_entry = xcp_on_can["CAN_FD"]["DataParams"]
-                a2l_params["CAN_FD"] = True 
-                a2l_params["CAN_FD_DATA_TRANSFER_BAUDRATE"] = self.force_int(self.get_next_value(can_fd_entry,"CAN_FD_DATA_TRANSFER_BAUDRATE"))
-            except:
-                a2l_params["CAN_FD"] = False 
-                a2l_params["CAN_FD_DATA_TRANSFER_BAUDRATE"] = None
-            
-            # Assign MAX_CTO
-            if a2l_params["CAN_FD"] == False or a2l_params["WRITE_DAQ_MULTIPLE"] == False:
-                a2l_params["MAX_CTO"] = "0x08"
-            else:
-                a2l_params["MAX_CTO"] = "0x0040" 
-    
-            # Assign MAX_DTO
-            if a2l_params["CAN_FD"] == False:
-                a2l_params["MAX_DTO"] = "0x0008"
-            else:
-                a2l_params["MAX_DTO"] = "0x0040" 
+                if_data = ast["PROJECT"]["MODULE"]["IF_DATA"]
                 
-                # a2l_params["MAX_DTO"] = protocol_layer[9]     
+                # Ensure IF_DATA is a list or dictionary and standardize to a list for easier handling
+                if isinstance(if_data, dict):
+                    if_data = [if_data]
+                
+                # Get XCP_ON_CAN section and extract relevant information
+                xcp = next((entry for entry in if_data if "XCP_ON_CAN" in entry), None)
+                if xcp is None:
+                    raise Exception("XCP_ON_CAN section not found in A2L file")
+                    
+                xcp_on_can = xcp["XCP_ON_CAN"]
+                a2l_params["CAN_ID_MASTER"], a2l_params["CAN_ID_MASTER_EXTENDED"] = self.extract_can_id(self.get_next_value(xcp_on_can["DataParams"], "CAN_ID_MASTER"))
+                a2l_params["CAN_ID_SLAVE"], a2l_params["CAN_ID_SLAVE_EXTENDED"] = self.extract_can_id(self.get_next_value(xcp_on_can["DataParams"], "CAN_ID_SLAVE"))
+                a2l_params["XCP_VERSION"] = xcp_on_can["DataParams"][0]
+                a2l_params["BAUDRATE"] = self.force_int(self.get_next_value(xcp_on_can["DataParams"], "BAUDRATE")) 
+                
+                # Attempt to extract PROTOCOL_LAYER and EVENT sections from XCP_ON_CAN sub section - otherwise default to general XCP section
+                try: 
+                    protocol_layer = xcp_on_can["PROTOCOL_LAYER"]["DataParams"]
+                    events = xcp_on_can["DAQ"]["EVENT"] 
+                except:
+                    protocol_layer = xcp["PROTOCOL_LAYER"]["DataParams"]
+                    events = xcp["DAQ"]["EVENT"] 
+                    print("WARNING: Unable to extract PROTOCOL_LAYER and DAQ from XCP_ON_CAN - extracting instead from general XCP settings")
+                    
+                # Add event data to list
+                event_data = []
+                for event in events:
+                    event_data.append({"EventName": event["DataParams"][0].strip('"'), "EventChannelNumber": self.force_int(event["DataParams"][2]), "EventPriority": f"0x{self.force_int(event['DataParams'][7]):02X}"})
+                
+                if "WRITE_DAQ_MULTIPLE" in protocol_layer:
+                    a2l_params["WRITE_DAQ_MULTIPLE"] = True 
+                else:  
+                    a2l_params["WRITE_DAQ_MULTIPLE"] = False
+                      
+                a2l_params["BYTE_ORDER"] = 'big' if protocol_layer[10] == 'BYTE_ORDER_MSB_FIRST' else 'little'
+                a2l_params["EVENTS"] = event_data                
+                
+                # Assign CAN FD related information (if available)
+                try: 
+                    can_fd_entry = xcp_on_can["CAN_FD"]["DataParams"]
+                    a2l_params["CAN_FD"] = True 
+                    a2l_params["CAN_FD_DATA_TRANSFER_BAUDRATE"] = self.force_int(self.get_next_value(can_fd_entry,"CAN_FD_DATA_TRANSFER_BAUDRATE"))
+                except:
+                    a2l_params["CAN_FD"] = False 
+                    a2l_params["CAN_FD_DATA_TRANSFER_BAUDRATE"] = None
+                
+                # Assign MAX_CTO
+                if a2l_params["CAN_FD"] == False or a2l_params["WRITE_DAQ_MULTIPLE"] == False:
+                    a2l_params["MAX_CTO"] = "0x08"
+                else:
+                    a2l_params["MAX_CTO"] = "0x0040" 
+        
+                # Assign MAX_DTO
+                if a2l_params["CAN_FD"] == False:
+                    a2l_params["MAX_DTO"] = "0x0008"
+                else:
+                    a2l_params["MAX_DTO"] = "0x0040" 
+                                    
+            return a2l_params
             
-        return a2l_params
+        except Exception as e:
+            # If there's an error extracting from A2L, load from default JSON file
+            if self.default_params_file is None or not os.path.exists(self.default_params_file):
+                print(f"\nERROR: Failed to extract a2l_params from A2L: {str(e)}")
+                print("ERROR: No default params file provided or file does not exist.")
+                sys.exit(1)
+                
+            try:
+                print(f"\nWARNING: Failed to extract a2l_params from A2L: {str(e)}")
+                print(f"WARNING: Loading default parameters from {self.default_params_file}")
+                print("WARNING: Please review the default parameters to ensure they are valid for your ECU!")
+                
+                with open(self.default_params_file, 'r') as f:
+                    a2l_params = json.load(f)
+                return a2l_params
+                
+            except Exception as json_e:
+                print(f"ERROR: Failed to load default parameters: {str(json_e)}")
+                sys.exit(1)
     
     # ----------------------------------
     # function for loading all computation methods from A2L files

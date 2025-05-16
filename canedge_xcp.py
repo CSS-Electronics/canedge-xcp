@@ -2,16 +2,18 @@ import argparse
 from utils import CANedgeXCP
 from pathlib import Path
 import math
+import os, json
 
 # Parse command-line arguments
 def parse_args():
     parser = argparse.ArgumentParser(description="XCP script for generating CANedge transmit list and DBC for dynamic DAQ lists.")
 
     # Required positional arguments
-    parser.add_argument("output_dbc", type=Path, help="Path for outputting DBC file. Example: path\to\mydbc.dbc")
-    parser.add_argument("output_transmit", type=Path, help="Path for outputting transmit list JSON file. Example: path\to\transmit_list.json")
-    parser.add_argument("signal_file", type=Path, help="Path to the CSV-style signal file to use for filtering signals. Example: path\to\signal_file.csv")
+    parser.add_argument("output_dbc", type=Path, help="Path for outputting DBC file. Example: path/to/mydbc.dbc")
+    parser.add_argument("output_transmit", type=Path, help="Path for outputting transmit list JSON file. Example: path/to/transmit_list.json")
+    parser.add_argument("signal_file", type=Path, help="Path to the CSV-style signal file to use for filtering signals. Example: path/to/signal_file.csv")
     parser.add_argument("--a2l", type=Path, nargs="+", required=True, help="One or more A2L files. Example: --a2l abc.a2l xyz.a2l.")
+    parser.add_argument("--default_params", type=Path, default=Path("a2l_params_default.json"), help="Path to default a2l parameters JSON file used when A2L file lacks XCP_ON_CAN section. Default: a2l_params_default.json")
 
     return parser.parse_args()
 
@@ -24,13 +26,15 @@ if __name__ == "__main__":
     output_transmit = args.output_transmit.resolve()
     signal_file = args.signal_file.resolve()
     a2l_files = [path.resolve() for path in args.a2l]
+    default_params_file = args.default_params.resolve()
 
     # Print parsed arguments for debugging
     print("\nParsed arguments:")
     print(f"Output DBC: {output_dbc}")
     print(f"Output transmit list: {output_transmit}")
     print(f"Signal file: {signal_file}")
-    print(f"A2L file(s): {a2l_files}\n")
+    print(f"A2L file(s): {a2l_files}")
+    print(f"Default params file: {default_params_file}\n")
 
     # Ensure signal file exists
     if not signal_file.exists():
@@ -46,7 +50,7 @@ if __name__ == "__main__":
     }
     
     # Initialize CANedgeXCP Class
-    cxcp = CANedgeXCP(a2l_files, signal_file)
+    cxcp = CANedgeXCP(a2l_files, signal_file, default_params_file)
 
     # Load A2L files into dictionary, load general XCP parameters/signals/computation methods, then filter signals based on signal filter list
     a2l_dict = cxcp.load_a2l_files()

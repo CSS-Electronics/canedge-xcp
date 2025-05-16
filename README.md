@@ -95,5 +95,6 @@ You can decode the DAQ-DTO data using the output DBC file(s) in below tools:
 - The script assumes you are using CANedge FW `01.09.01+` (support for longer transmit lists)
 - It can be useful to add multiple commands in a `*.bat` file for repeated use
 - This script is provided as-is and we do not take responsibility for any issues arising from its use
+- If the A2L lacks an `XCP_ON_CAN` section, the script instead uses the `a2l_params_default.json` values
 
 
