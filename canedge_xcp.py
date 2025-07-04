@@ -67,6 +67,9 @@ if __name__ == "__main__":
     print(f"\nRequested signals: {len(user_signals)} | Available signals: {len(a2l_signals_all)} | Matched signals: {len(signals)} ({math.floor((len(signals)/len(user_signals))*100)}%)")
     print(f"A2L settings: MAX_CTO: {int(a2l_params['MAX_CTO'],16)} | MAX_DTO: {int(a2l_params['MAX_DTO'],16)} | BYTE_ORDER: {a2l_params['BYTE_ORDER']} | CAN_FD: {a2l_params['CAN_FD']}\n")
 
+    # Generate status CSV showing which signals were matched/not matched
+    status_csv_path = cxcp.create_status_csv(user_signals)
+    
     # Group the signals by assigning them to DAQ and ODT lists
     signals_grouped = cxcp.group_signals(signals, a2l_params)
 

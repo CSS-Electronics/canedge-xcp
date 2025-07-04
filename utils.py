@@ -4,6 +4,7 @@ class CANedgeXCP:
         self.a2l_files = a2l_files 
         self.signal_file = signal_file
         self.default_params_file = default_params_file
+        self.matched_signals = set()  # Store matched signal names
         self.data_type_map = {
             "uchar": ("unsigned", 1),
             "schar": ("signed", 1),
@@ -312,6 +313,9 @@ class CANedgeXCP:
     def filter_a2l_signals(self,a2l_signals_all, user_signals, a2l_params):  
         import json   
         
+        # Clear previously matched signals
+        self.matched_signals = set()
+        
         max_dto = min(int(a2l_params["MAX_DTO"], 16),64)
         signals_filtered_dict = {}
         for signal in a2l_signals_all:
@@ -335,6 +339,8 @@ class CANedgeXCP:
                         continue
                     
                     signals_filtered_dict[signal_name] = new_signal
+                    # Add to matched signals set
+                    self.matched_signals.add(signal_name)
 
         signals_filtered = list(signals_filtered_dict.values())       
             
@@ -563,6 +569,38 @@ class CANedgeXCP:
         
         return transmit_list_json
 
+    # ----------------------------------
+    # function for creating a status CSV file showing matched vs unmatched signals
+    def create_status_csv(self, user_signals):
+        import csv
+        from pathlib import Path
+        
+        # Create output path based on input file name
+        input_path = Path(self.signal_file)
+        status_path = input_path.parent / f"{input_path.stem}_status.csv"
+        
+        # Prepare data rows - each row will have signal name and match status
+        rows = []
+        
+        # Add unmatched signals first
+        for signal_name in user_signals.keys():
+            if signal_name not in self.matched_signals:
+                rows.append([signal_name, user_signals[signal_name], "Not Matched"])
+        
+        # Then add matched signals
+        for signal_name in user_signals.keys():
+            if signal_name in self.matched_signals:
+                rows.append([signal_name, user_signals[signal_name], "Matched"])
+        
+        # Write to CSV file
+        with open(status_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            writer.writerow(["Signal Name", "Event Channel", "Match Status"])  # Header
+            writer.writerows(rows)
+            
+        print(f"\nCreated status CSV file: {status_path}")
+        return status_path
+        
     # ----------------------------------
     # function for creating DBC file from A2L signal information and DAQ frames
     def create_dbc(self, signals_grouped, a2l_params, output_dbc, settings): 
